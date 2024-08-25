@@ -41,7 +41,7 @@ yargs(hideBin(process.argv))
                         "Platform to download (windows, darwin, linux)"
                 })
                 .option("beta", {
-                    default: "windows",
+                    default: false,
                     type: "boolean",
                     alias: "b",
                     description:
@@ -123,15 +123,14 @@ yargs(hideBin(process.argv))
                     default: "windows",
                     type: "string",
                     alias: "p",
-                    description:
-                        "Platform to download (windows, darwin, linux)"
-                }).option("beta", {
-                default: "windows",
-                type: "boolean",
-                alias: "b",
-                description:
-                    "Download beta version"
-            });
+                    description: "Platform to download (windows, darwin, linux)"
+                })
+                .option("beta", {
+                    default: false,
+                    type: "boolean",
+                    alias: "b",
+                    description: "Download beta version"
+                });
         },
         async (argv) => {
             const version = await getLatestVersion(
