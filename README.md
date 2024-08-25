@@ -23,6 +23,7 @@ Options:
       --help      Show help                                                               [boolean]
   -g, --game      Game to download (dofus, retro, ...)                  [string] [default: "dofus"]
   -p, --platform  Platform to download (windows, darwin, linux)       [string] [default: "windows"]
+  -b, --beta      Download beta version                                  [boolean] [default: false]
 ```
 
 ```
@@ -35,6 +36,7 @@ Options:
   -s, --select    Comma separated list of files to download                                [string]
   -g, --game      Game to download (dofus, retro, ...)                  [string] [default: "dofus"]
   -p, --platform  Platform to download (windows, darwin, linux)       [string] [default: "windows"]
+  -b, --beta      Download beta version                                  [boolean] [default: false]
   -f, --force     If enabled, existing files will be overwriten          [boolean] [default: false]
   -o, --output    Output folder                                      [string] [default: "./output"]
 ```
