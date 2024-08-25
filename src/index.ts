@@ -179,12 +179,11 @@ const downloadFragments = async (
             const bundleHash = getStringFromHashArray(bundle.hashArray()!);
 
             // download chunks
-            const chunks = chunkRange.map((c) => c.range).join(", ");
-            console.log(`Downloading chunks: ${chunks}...`);
+            console.log(`Downloading ${chunkRange.length} chunks...`);
             const data = await getBundleChunks(
                 game,
                 bundleHash,
-                chunks
+                chunkRange.map((c) => c.range).join(", ")
             );
 
             if (chunkRange.length === 1) {
@@ -199,7 +198,6 @@ const downloadFragments = async (
             const parsedChunks = parseCloudflareResponse(data, "");
 
             // write chunks to disk
-            console.log(`Writing downloaded chunks...`);
             for (const parsedChunk of parsedChunks) {
                 const hash = chunkRange.find(
                     (c) =>
