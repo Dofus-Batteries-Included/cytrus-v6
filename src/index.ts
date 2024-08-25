@@ -1,7 +1,11 @@
 #! /usr/bin/env node
 
-import yargs from "yargs/yargs";
+import { ByteBuffer } from "flatbuffers";
+import { promises as fs } from "fs";
+import os from "os";
+import path from "path";
 import { hideBin } from "yargs/helpers";
+import yargs from "yargs/yargs";
 import {
     GameNames,
     Platforms,
@@ -9,19 +13,15 @@ import {
     getLatestVersion,
     getManifestBinaryFile,
 } from "./api";
-import { Manifest } from "./flatbuffers/manifest";
-import { ByteBuffer } from "flatbuffers";
-import os from "os";
-import path from "path";
-import { promises as fs } from "fs";
+import { parseCloudflareResponse } from "./cloudflare";
 import { Chunk } from "./flatbuffers/chunk";
+import { Manifest } from "./flatbuffers/manifest";
+import { getTargetFilenamesAndChunkHashes } from "./targets";
 import {
     createFoldersRecursively,
     getStringFromHashArray,
     safeRmDir,
 } from "./utils";
-import { getTargetFilenamesAndChunkHashes } from "./targets";
-import { parseCloudflareResponse } from "./cloudflare";
 
 yargs(hideBin(process.argv))
     .scriptName("cytrus-v6")
@@ -50,6 +50,13 @@ yargs(hideBin(process.argv))
                     description:
                         "Platform to download (windows, darwin, linux)",
                 })
+                .option("beta", {
+                    default: "windows",
+                    type: "boolean",
+                    alias: "b",
+                    description:
+                        "Download beta version",
+                })
                 .option("force", {
                     default: false,
                     alias: "f",
@@ -65,7 +72,7 @@ yargs(hideBin(process.argv))
                 });
         },
         async (argv) => {
-            const { game, select, force, output, platform } =
+            const { game, select, force, output, platform, beta } =
                 argv as any as CommandTypes["download"];
 
             const patterns = select?.split(",").map((x) => x.trim());
@@ -73,16 +80,20 @@ yargs(hideBin(process.argv))
             const chunkOutputFolder = path.join(os.tmpdir(), "cytrus-v6", game);
             const outputFolder = path.resolve(output);
 
-            console.log("Downloading", game, "into", outputFolder);
+            console.log(`Downloading ${game}${beta ? " (beta)" : ""} into ${outputFolder}`);
 
             await createFoldersRecursively(chunkOutputFolder);
             await createFoldersRecursively(outputFolder);
 
-            const version = await getLatestVersion(game, platform);
+            const version = await getLatestVersion(game, platform, beta);
+
+            console.log(`Latest version: ${version}`);
+
             const manifestBin = await getManifestBinaryFile(
                 game,
                 platform,
-                version
+                version,
+                beta
             );
             const bb = new ByteBuffer(manifestBin);
 
@@ -146,7 +157,7 @@ const downloadFragments = async (
 ) => {
     for (let i = 0; i < manifest.fragmentsLength(); i++) {
         const fragmentFiles = filesToDownload[i];
-        console.log(`Parsing fragment ${i}/${manifest.fragmentsLength()}`);
+        console.log(`Fragment ${i}/${manifest.fragmentsLength()}`);
         const fragment = manifest.fragments(i)!;
         for (let j = 0; j < fragment.bundlesLength(); j++) {
             const bundle = fragment.bundles(j)!;
@@ -166,17 +177,18 @@ const downloadFragments = async (
 
             const chunkRange = bundleChunks.map((chunk) => ({
                 hash: getStringFromHashArray(chunk.hashArray()!),
-                range: `${chunk.offset()}-${
-                    Number(chunk.offset()) + Number(chunk.size()) - 1
-                }`,
+                range: `${chunk.offset()}-${Number(chunk.offset()) + Number(chunk.size()) - 1
+                    }`,
             }));
             const bundleHash = getStringFromHashArray(bundle.hashArray()!);
 
             // download chunks
+            const chunks = chunkRange.map((c) => c.range).join(", ");
+            console.log(`Downloading chunks: ${chunks}...`);
             const data = await getBundleChunks(
                 game,
                 bundleHash,
-                chunkRange.map((c) => c.range).join(", ")
+                chunks
             );
 
             if (chunkRange.length === 1) {
@@ -191,6 +203,7 @@ const downloadFragments = async (
             const parsedChunks = parseCloudflareResponse(data, "");
 
             // write chunks to disk
+            console.log(`Writing downloaded chunks...`);
             for (const parsedChunk of parsedChunks) {
                 const hash = chunkRange.find(
                     (c) =>
@@ -251,6 +264,7 @@ interface CommandTypes {
         game: GameNames;
         platform: Platforms;
         output: string;
+        beta: boolean;
     };
     version: {
         game: string;
