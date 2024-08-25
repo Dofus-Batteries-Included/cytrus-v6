@@ -6,22 +6,12 @@ import os from "os";
 import path from "path";
 import { hideBin } from "yargs/helpers";
 import yargs from "yargs/yargs";
-import {
-    GameNames,
-    Platforms,
-    getBundleChunks,
-    getLatestVersion,
-    getManifestBinaryFile,
-} from "./api";
+import { GameNames, getBundleChunks, getLatestVersion, getManifestBinaryFile, Platforms } from "./api";
 import { parseCloudflareResponse } from "./cloudflare";
 import { Chunk } from "./flatbuffers/chunk";
 import { Manifest } from "./flatbuffers/manifest";
 import { getTargetFilenamesAndChunkHashes } from "./targets";
-import {
-    createFoldersRecursively,
-    getStringFromHashArray,
-    safeRmDir,
-} from "./utils";
+import { createFoldersRecursively, getStringFromHashArray, safeRmDir } from "./utils";
 
 yargs(hideBin(process.argv))
     .scriptName("cytrus-v6")
@@ -35,40 +25,40 @@ yargs(hideBin(process.argv))
                 .option("select", {
                     type: "string",
                     alias: "s",
-                    description: "Comma separated list of files to download",
+                    description: "Comma separated list of files to download"
                 })
                 .option("game", {
                     default: "dofus",
                     alias: "g",
                     type: "string",
-                    description: "Game to download (dofus, retro, ...)",
+                    description: "Game to download (dofus, retro, ...)"
                 })
                 .option("platform", {
                     default: "windows",
                     type: "string",
                     alias: "p",
                     description:
-                        "Platform to download (windows, darwin, linux)",
+                        "Platform to download (windows, darwin, linux)"
                 })
                 .option("beta", {
                     default: "windows",
                     type: "boolean",
                     alias: "b",
                     description:
-                        "Download beta version",
+                        "Download beta version"
                 })
                 .option("force", {
                     default: false,
                     alias: "f",
                     type: "boolean",
                     description:
-                        "If enabled, existing files will be overwriten",
+                        "If enabled, existing files will be overwriten"
                 })
                 .option("output", {
                     default: "./output",
                     alias: "o",
                     type: "string",
-                    description: "Output folder",
+                    description: "Output folder"
                 });
         },
         async (argv) => {
@@ -104,7 +94,7 @@ yargs(hideBin(process.argv))
                     manifest,
                     outputFolder,
                     patterns,
-                    force,
+                    force
                 });
 
             await downloadFragments(
@@ -127,20 +117,27 @@ yargs(hideBin(process.argv))
                     default: "dofus",
                     alias: "g",
                     type: "string",
-                    description: "Game to download (dofus, retro, ...)",
+                    description: "Game to download (dofus, retro, ...)"
                 })
                 .option("platform", {
                     default: "windows",
                     type: "string",
                     alias: "p",
                     description:
-                        "Platform to download (windows, darwin, linux)",
-                });
+                        "Platform to download (windows, darwin, linux)"
+                }).option("beta", {
+                default: "windows",
+                type: "boolean",
+                alias: "b",
+                description:
+                    "Download beta version"
+            });
         },
         async (argv) => {
             const version = await getLatestVersion(
                 argv.game as GameNames,
-                argv.platform as Platforms
+                argv.platform as Platforms,
+                argv.beta as boolean
             );
             console.log(version);
         }
@@ -178,7 +175,7 @@ const downloadFragments = async (
             const chunkRange = bundleChunks.map((chunk) => ({
                 hash: getStringFromHashArray(chunk.hashArray()!),
                 range: `${chunk.offset()}-${Number(chunk.offset()) + Number(chunk.size()) - 1
-                    }`,
+                }`
             }));
             const bundleHash = getStringFromHashArray(bundle.hashArray()!);
 
